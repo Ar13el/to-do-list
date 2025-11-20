@@ -138,7 +138,27 @@ h2 {
 }
 
 .task-name {
-    font-size: 18px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.task-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.delete-btn {
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: 0.2s;
+    filter: invert(1);
+}
+
+.delete-btn:hover {
+    opacity: 1;
 }
 
 .task-desc {
@@ -165,10 +185,6 @@ h2 {
 
 .button-style:hover {
     background: #444;
-}
-
-.button-action:hover {
-    letter-spacing: 1px;
 }
 
 #modal, #confirmModal {
@@ -232,7 +248,7 @@ h2 {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -248,6 +264,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+let taskToDelete = null;
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
@@ -265,6 +283,11 @@ onAuthStateChanged(auth, async (user) => {
         const header = document.createElement("div");
         header.className = "task-header";
 
+        const left = document.createElement("div");
+        left.style.display = "flex";
+        left.style.alignItems = "center";
+        left.style.gap = "8px";
+
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = d.done;
@@ -274,16 +297,29 @@ onAuthStateChanged(auth, async (user) => {
         nameSpan.className = "task-name";
         nameSpan.innerText = d.name;
 
+        left.appendChild(checkbox);
+        left.appendChild(nameSpan);
+
+        const right = document.createElement("div");
+        right.className = "task-buttons";
+
+        const del = document.createElement("img");
+        del.src = "trash.svg";
+        del.className = "delete-btn";
+        del.dataset.docId = docSnap.id;
+
         const small = document.createElement("small");
         small.innerText = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString() : "";
 
         const star = document.createElement("span");
         star.innerText = d.important ? "⭐" : "";
 
-        header.appendChild(checkbox);
-        header.appendChild(nameSpan);
-        header.appendChild(small);
-        header.appendChild(star);
+        right.appendChild(small);
+        right.appendChild(star);
+        right.appendChild(del);
+
+        header.appendChild(left);
+        header.appendChild(right);
 
         const desc = document.createElement("div");
         desc.className = "task-desc";
@@ -294,7 +330,7 @@ onAuthStateChanged(auth, async (user) => {
         content.appendChild(div);
 
         div.onclick = (e)=>{
-            if(e.target!==checkbox){
+            if(e.target!==checkbox && e.target!==del){
                 if(desc.style.maxHeight===""||desc.style.maxHeight==="0px"){
                     desc.style.maxHeight="200px";
                     desc.style.paddingTop="8px";
@@ -303,6 +339,11 @@ onAuthStateChanged(auth, async (user) => {
                     desc.style.paddingTop="0px";
                 }
             }
+        };
+
+        del.onclick = () => {
+            taskToDelete = del.dataset.docId;
+            document.getElementById("confirmModal").classList.add("show");
         };
     });
 
@@ -315,34 +356,32 @@ onAuthStateChanged(auth, async (user) => {
         location.reload();
     };
 
-    const confirmModal = document.getElementById("confirmModal");
-    const confirmYes = document.getElementById("confirmYes");
-    const confirmNo = document.getElementById("confirmNo");
-
-    document.getElementById("modalDelete").onclick = () => {
-        const tasks = document.querySelectorAll(".task-header input[type=checkbox]:checked");
-        if(tasks.length === 0) return;
-        confirmModal.classList.add("show");
-
-        confirmYes.onclick = async () => {
-            for(const cb of tasks){
-                await deleteDoc(doc(db,"users",user.uid,"tasks",cb.dataset.docId));
-            }
-            confirmModal.classList.remove("show");
-            location.reload();
-        };
-
-        confirmNo.onclick = () => {
-            confirmModal.classList.remove("show");
-        };
-    };
-
-    document.getElementById("modalConfirm").onclick = async () => {
+    document.getElementById("modalConfirm").onclick = async ()=>{
         const tasks = document.querySelectorAll(".task-header input[type=checkbox]:checked");
         for(const cb of tasks){
             await updateDoc(doc(db,"users",user.uid,"tasks",cb.dataset.docId), {done:true});
         }
         location.reload();
+    };
+
+    const confirmYes = document.getElementById("confirmYes");
+    const confirmNo = document.getElementById("confirmNo");
+
+    confirmYes.onclick = async ()=>{
+        if(taskToDelete){
+            await deleteDoc(doc(db,"users",user.uid,"tasks",taskToDelete));
+            location.reload();
+        }
+    };
+
+    confirmNo.onclick = ()=>{
+        document.getElementById("confirmModal").classList.remove("show");
+        taskToDelete = null;
+    };
+
+    document.getElementById("logoutBtn").onclick = async ()=>{
+        await signOut(auth);
+        window.location.href = "index.html";
     };
 
     document.getElementById("loadingScreen").style.opacity = 0;
@@ -368,7 +407,6 @@ onAuthStateChanged(auth, async (user) => {
 <div id="taskList"></div>
 <button id="addTask" class="button-style button-action">+ Add a task</button>
 <button id="modalConfirm" class="button-style button-action">Confirm Task</button>
-<button id="modalDelete" class="button-style button-action">Delete Task</button>
 </div>
 
 <div id="modal">
@@ -385,7 +423,7 @@ onAuthStateChanged(auth, async (user) => {
 
 <div id="confirmModal">
 <div class="modal-box">
-<p>Are you sure to delete the selected tasks?</p>
+<p>Are you sure to delete this task?</p>
 <div class="confirm-buttons" style="display:flex;margin-top:15px">
 <button id="confirmYes" class="button-style">Yes</button>
 <button id="confirmNo" class="button-style">No</button>
