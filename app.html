@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To do list</title>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #1e1e1e;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#loadingScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #1e1e1e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    font-size: 28px;
+    font-weight: bold;
+    color: #fff;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.sidebar {
+    width: 220px;
+    background: #151515;
+    display: flex;
+    flex-direction: column;
+    padding-top: 30px;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.4);
+}
+
+h2 {
+    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+}
+
+.menu-option {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 10px;
+    margin: 6px 15px;
+    background: #222;
+    transition: 0.25s ease;
+    transform: translateX(0);
+}
+
+.menu-option:hover {
+    background: #333;
+    letter-spacing: 2px;
+    transform: translateX(10px);
+}
+
+#userInfo {
+    margin-top: auto;
+    opacity: 0.8;
+    font-size: 14px;
+    text-align: center;
+    padding: 10px;
+    word-wrap: break-word;
+}
+
+#logoutBtn {
+    width: 80%;
+    padding: 12px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+    margin: 15px auto 20px auto;
+    display: block;
+}
+
+#logoutBtn:hover {
+    background: #555;
+}
+
+.content {
+    flex: 1;
+    background: #1e1e1e;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.header-title {
+    font-size: 38px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.header-date {
+    opacity: 0.7;
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.task {
+    background: #242424;
+    padding: 18px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.task-name {
+    font-size: 18px;
+}
+
+.task-desc {
+    margin-top: 8px;
+    font-size: 14px;
+    opacity: 0.7;
+    max-height: 0px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.button-style {
+    padding: 12px;
+    margin-top: 10px;
+    width: 200px;
+    border-radius: 10px;
+    border: none;
+    background: #333;
+    color: white;
+    cursor: pointer;
+    font-size: 15px;
+    transition-duration: 0.2s;
+}
+
+.button-style:hover {
+    background: #444;
+}
+
+.button-action:hover {
+    letter-spacing: 1px;
+}
+
+#modal, #confirmModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s ease;
+}
+
+#modal.show, #confirmModal.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-box {
+    background: #222;
+    padding: 25px;
+    border-radius: 12px;
+    width: 360px;
+    transform: scale(0.7);
+    transition: 0.25s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+#modal.show .modal-box, #confirmModal.show .modal-box {
+    transform: scale(1);
+}
+
+.modal-input {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background: #333;
+    color: white;
+}
+
+.switch-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.confirm-buttons button {
+    flex: 1;
+    margin: 0 5px;
+}
+</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey:"AIzaSyDOnCWCmkuASQyBDU645ydrIXutj4_wfq8",
+    authDomain:"to-do-ecd2b.firebaseapp.com",
+    projectId:"to-do-ecd2b",
+    storageBucket:"to-do-ecd2b.firebasestorage.app",
+    messagingSenderId:"688781168822",
+    appId:"1:688781168822:web:baf48fa0de30433cfb5617",
+    measurementId:"G-9XZBGPP5D0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = "index.html"; return; }
+    document.getElementById("userInfo").innerText = "Logged as: "+user.email;
+
+    const content = document.getElementById("taskList");
+    const snap = await getDocs(collection(db,"users",user.uid,"tasks"));
+    content.innerHTML = "";
+
+    snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "task";
+
+        const header = document.createElement("div");
+        header.className = "task-header";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = d.done;
+        checkbox.dataset.docId = docSnap.id;
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "task-name";
+        nameSpan.innerText = d.name;
+
+        const small = document.createElement("small");
+        small.innerText = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleDateString() : "";
+
+        const star = document.createElement("span");
+        star.innerText = d.important ? "⭐" : "";
+
+        header.appendChild(checkbox);
+        header.appendChild(nameSpan);
+        header.appendChild(small);
+        header.appendChild(star);
+
+        const desc = document.createElement("div");
+        desc.className = "task-desc";
+        desc.innerText = d.description || "No se ha proporcionado una descripción";
+
+        div.appendChild(header);
+        div.appendChild(desc);
+        content.appendChild(div);
+
+        div.onclick = (e)=>{
+            if(e.target!==checkbox){
+                if(desc.style.maxHeight===""||desc.style.maxHeight==="0px"){
+                    desc.style.maxHeight="200px";
+                    desc.style.paddingTop="8px";
+                }else{
+                    desc.style.maxHeight="0px";
+                    desc.style.paddingTop="0px";
+                }
+            }
+        };
+    });
+
+    document.getElementById("modalAdd").onclick = async ()=>{
+        const name = document.getElementById("taskInput").value;
+        const description = document.getElementById("taskDesc").value;
+        const important = document.getElementById("importantSwitch").checked;
+        if(name.trim().length===0) return;
+        await addDoc(collection(db,"users",user.uid,"tasks"), {name, description, important, done:false, createdAt: serverTimestamp()});
+        location.reload();
+    };
+
+    const confirmModal = document.getElementById("confirmModal");
+    const confirmYes = document.getElementById("confirmYes");
+    const confirmNo = document.getElementById("confirmNo");
+
+    document.getElementById("modalDelete").onclick = () => {
+        const tasks = document.querySelectorAll(".task-header input[type=checkbox]:checked");
+        if(tasks.length === 0) return;
+        confirmModal.classList.add("show");
+
+        confirmYes.onclick = async () => {
+            for(const cb of tasks){
+                await deleteDoc(doc(db,"users",user.uid,"tasks",cb.dataset.docId));
+            }
+            confirmModal.classList.remove("show");
+            location.reload();
+        };
+
+        confirmNo.onclick = () => {
+            confirmModal.classList.remove("show");
+        };
+    };
+
+    document.getElementById("modalConfirm").onclick = async () => {
+        const tasks = document.querySelectorAll(".task-header input[type=checkbox]:checked");
+        for(const cb of tasks){
+            await updateDoc(doc(db,"users",user.uid,"tasks",cb.dataset.docId), {done:true});
+        }
+        location.reload();
+    };
+
+    document.getElementById("loadingScreen").style.opacity = 0;
+    setTimeout(()=>{document.getElementById("loadingScreen").style.display="none"},300);
+});
+</script>
+</head>
+<body>
+<div id="loadingScreen">Loading tasks...</div>
+
+<div class="sidebar">
+<h2>MENU</h2>
+<div class="menu-option">My Day</div>
+<div class="menu-option">Important</div>
+<div class="menu-option">Tasks</div>
+<div id="userInfo">...</div>
+<button id="logoutBtn" class="button-style">Logout</button>
+</div>
+
+<div class="content">
+<div class="header-title">My Day</div>
+<div id="date" class="header-date"></div>
+<div id="taskList"></div>
+<button id="addTask" class="button-style button-action">+ Add a task</button>
+<button id="modalConfirm" class="button-style button-action">Confirm Task</button>
+<button id="modalDelete" class="button-style button-action">Delete Task</button>
+</div>
+
+<div id="modal">
+<div class="modal-box">
+<input id="taskInput" class="modal-input" placeholder="Task name">
+<textarea id="taskDesc" class="modal-input" placeholder="Task description"></textarea>
+<div class="switch-container">
+<span>Important</span>
+<input type="checkbox" id="importantSwitch">
+</div>
+<button id="modalAdd" class="button-style">Submit</button>
+</div>
+</div>
+
+<div id="confirmModal">
+<div class="modal-box">
+<p>Are you sure to delete the selected tasks?</p>
+<div class="confirm-buttons" style="display:flex;margin-top:15px">
+<button id="confirmYes" class="button-style">Yes</button>
+<button id="confirmNo" class="button-style">No</button>
+</div>
+</div>
+</div>
+
+<script>
+function refreshDate(){
+    const f = new Date();
+    const d=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const m=["January","February","March","April","May","June","July","August","September","October","November","December"];
+    document.getElementById("date").innerText=`${d[f.getDay()]}, ${m[f.getMonth()]} ${f.getDate()}`;
+}
+refreshDate();
+
+const modal=document.getElementById("modal");
+document.getElementById("addTask").onclick=()=>modal.classList.add("show");
+modal.onclick=e=>{if(e.target===modal) modal.classList.remove("show");};
+</script>
+</body>
+</html>
