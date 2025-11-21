@@ -291,4 +291,8 @@ h2 {
         height: 24px;
         fill: white;
     }
+    .bottom-bar button#logoutBtnMobile {
+    color: #ff4d4d;
+}
+
 }

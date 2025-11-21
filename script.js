@@ -150,3 +150,6 @@ refreshDate();
 const modal=document.getElementById("modal");
 document.getElementById("addTask").onclick=()=>modal.classList.add("show");
 modal.onclick=e=>{if(e.target===modal) modal.classList.remove("show");};
+document.getElementById('logoutBtnMobile').addEventListener('click', () => {
+    document.getElementById('logoutBtn').click();
+});
