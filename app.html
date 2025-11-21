@@ -8,19 +8,21 @@
 <script type="module" src="script.js" defer></script>
 </head>
 <body>
+
 <div id="loadingScreen">Loading tasks...</div>
 
 <div class="sidebar">
 <h2>MENU</h2>
-<div class="menu-option">My Day</div>
-<div class="menu-option">Important</div>
-<div class="menu-option">Tasks</div>
+<div class="menu-option" id="myDayBtnSidebar">My Day</div>
+<div class="menu-option" id="importantBtnSidebar">Important</div>
+<div class="menu-option" id="tasksBtnSidebar">Tasks</div>
+
 <div id="userInfo">...</div>
 <button id="logoutBtn" class="button-style">Logout</button>
 </div>
 
 <div class="content">
-<div class="header-title">My Day</div>
+<div class="header-title" id="headerTitle">My Day</div>
 <div id="date" class="header-date"></div>
 <div id="taskList"></div>
 <button id="addTask" class="button-style button-action">+ Add a task</button>
@@ -31,6 +33,7 @@
 <div class="modal-box">
 <input id="taskInput" class="modal-input" placeholder="Task name">
 <textarea id="taskDesc" class="modal-input" placeholder="Task description"></textarea>
+<input id="taskdate" type="date" class="modal-input">
 <div class="switch-container">
 <span>Important</span>
 <input type="checkbox" id="importantSwitch">
@@ -48,6 +51,7 @@
 </div>
 </div>
 </div>
+
 <div class="bottom-bar">
     <button id="myDayBtn">
         <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
@@ -66,6 +70,6 @@
         Logout
     </button>
 </div>
-</body>
 
+</body>
 </html>
