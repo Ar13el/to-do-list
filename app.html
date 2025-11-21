@@ -14,6 +14,7 @@ body {
     display: flex;
     height: 100vh;
     overflow: hidden;
+    flex-direction: row;
 }
 
 #loadingScreen {
@@ -244,7 +245,127 @@ h2 {
     flex: 1;
     margin: 0 5px;
 }
+
+@media (max-width: 900px) {
+    body {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 10px;
+        box-shadow: none;
+        align-items: center;
+    }
+
+    .menu-option {
+        margin: 0 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    #userInfo {
+        order: 2;
+        width: 100%;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    #logoutBtn {
+        order: 3;
+        margin: 3px 15px 20px 10px;
+        width: 50%;
+        display: block;
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .header-title {
+        font-size: 28px;
+    }
+
+    .header-date {
+        font-size: 16px;
+    }
+
+    .task {
+        padding: 12px;
+    }
+
+    .modal-box {
+        width: 90%;
+    }
+
+    .button-style {
+        width: 100%;
+    }
+}
+
+@media (max-width: 500px) {
+    .task-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .task-buttons {
+        flex-wrap: wrap;
+    }
+
+    #modal .modal-box {
+        padding: 15px;
+    }
+}
 </style>
+</head>
+<body>
+<div id="loadingScreen">Loading tasks...</div>
+
+<div class="sidebar">
+<h2>MENU</h2>
+<div class="menu-option">My Day</div>
+<div class="menu-option">Important</div>
+<div class="menu-option">Tasks</div>
+<div id="userInfo">...</div>
+<button id="logoutBtn" class="button-style">Logout</button>
+</div>
+
+<div class="content">
+<div class="header-title">My Day</div>
+<div id="date" class="header-date"></div>
+<div id="taskList"></div>
+<button id="addTask" class="button-style button-action">+ Add a task</button>
+<button id="modalConfirm" class="button-style button-action">Confirm Task</button>
+</div>
+
+<div id="modal">
+<div class="modal-box">
+<input id="taskInput" class="modal-input" placeholder="Task name">
+<textarea id="taskDesc" class="modal-input" placeholder="Task description"></textarea>
+<div class="switch-container">
+<span>Important</span>
+<input type="checkbox" id="importantSwitch">
+</div>
+<button id="modalAdd" class="button-style">Submit</button>
+</div>
+</div>
+
+<div id="confirmModal">
+<div class="modal-box">
+<p>Are you sure to delete this task?</p>
+<div class="confirm-buttons" style="display:flex;margin-top:15px">
+<button id="confirmYes" class="button-style">Yes</button>
+<button id="confirmNo" class="button-style">No</button>
+</div>
+</div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
@@ -388,48 +509,6 @@ onAuthStateChanged(auth, async (user) => {
     setTimeout(()=>{document.getElementById("loadingScreen").style.display="none"},300);
 });
 </script>
-</head>
-<body>
-<div id="loadingScreen">Loading tasks...</div>
-
-<div class="sidebar">
-<h2>MENU</h2>
-<div class="menu-option">My Day</div>
-<div class="menu-option">Important</div>
-<div class="menu-option">Tasks</div>
-<div id="userInfo">...</div>
-<button id="logoutBtn" class="button-style">Logout</button>
-</div>
-
-<div class="content">
-<div class="header-title">My Day</div>
-<div id="date" class="header-date"></div>
-<div id="taskList"></div>
-<button id="addTask" class="button-style button-action">+ Add a task</button>
-<button id="modalConfirm" class="button-style button-action">Confirm Task</button>
-</div>
-
-<div id="modal">
-<div class="modal-box">
-<input id="taskInput" class="modal-input" placeholder="Task name">
-<textarea id="taskDesc" class="modal-input" placeholder="Task description"></textarea>
-<div class="switch-container">
-<span>Important</span>
-<input type="checkbox" id="importantSwitch">
-</div>
-<button id="modalAdd" class="button-style">Submit</button>
-</div>
-</div>
-
-<div id="confirmModal">
-<div class="modal-box">
-<p>Are you sure to delete this task?</p>
-<div class="confirm-buttons" style="display:flex;margin-top:15px">
-<button id="confirmYes" class="button-style">Yes</button>
-<button id="confirmNo" class="button-style">No</button>
-</div>
-</div>
-</div>
 
 <script>
 function refreshDate(){
