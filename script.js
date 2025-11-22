@@ -109,19 +109,34 @@ function googleCalendarDateFormat(date){
 }
 
 function openCalendarReminder(name, description, dateInput){
-    let today = new Date();
-    today.setHours(0,0,0,0);
     let d = dateInput.trim()==="" ? new Date() : new Date(dateInput);
-    let taskDate = new Date(d);
-    taskDate.setHours(0,0,0,0);
-    if(taskDate.getTime() !== today.getTime()) d.setDate(d.getDate()-1);
-    let start = googleCalendarDateFormat(d);
-    d.setHours(d.getHours()+1);
-    let end = googleCalendarDateFormat(d);
-    const t = encodeURIComponent(name);
-    const det = encodeURIComponent(description || "");
-    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${t}&details=${det}&dates=${start}/${end}`, "_blank");
+    d.setHours(0,0,0,0);
+    let start = new Date(d.getTime());
+    let end = new Date(d.getTime() + 60*60*1000);
+    function fmt(x){ 
+        return x.toISOString().replace(/[-:]/g,"").replace(/\.\d+/,""); 
+    }
+    let ics =
+        "BEGIN:VCALENDAR\n" +
+        "VERSION:2.0\n" +
+        "BEGIN:VEVENT\n" +
+        "SUMMARY:" + name + "\n" +
+        "DESCRIPTION:" + (description||"") + "\n" +
+        "DTSTART:" + fmt(start) + "\n" +
+        "DTEND:" + fmt(end) + "\n" +
+        "END:VEVENT\n" +
+        "END:VCALENDAR";
+    let blob = new Blob([ics], {type:"text/calendar"});
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = name.replace(/\s+/g,"_") + ".ics";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
 }
+
 
 onAuthStateChanged(auth, async user=>{
     if(!user){ window.location.href="index.html"; return; }
@@ -254,7 +269,22 @@ document.getElementById("confirmYes").onclick = async()=>{
 
 document.getElementById("confirmNo").onclick = ()=>{ document.getElementById("confirmModal").classList.remove("show"); taskToDelete=null; };
 
-document.getElementById("calendarYes").onclick = ()=>{
+// ---- CALENDAR INTEGRADO ----
+document.getElementById("calendarYes").onclick = () => {
+    if(taskToCalendar){
+        let dt = taskToCalendar.assignedDate ? taskToCalendar.assignedDate.toDate() : new Date();
+        let start = dt.toISOString().replace(/[-:]/g, "").split(".")[0];
+        let endDate = new Date(dt.getTime() + 60*60*1000);
+        let end = endDate.toISOString().replace(/[-:]/g, "").split(".")[0];
+        const name = encodeURIComponent(taskToCalendar.name);
+        const desc = encodeURIComponent(taskToCalendar.description || "");
+        const url = `https://calendar.google.com/calendar/r/eventedit?text=${name}&details=${desc}&dates=${start}/${end}`;
+        window.open(url, "_blank");
+    }
+    document.getElementById("calendarModal").classList.remove("show");
+};
+
+document.getElementById("calendarDownload").onclick = () => {
     if(taskToCalendar){
         let dt = taskToCalendar.assignedDate ? taskToCalendar.assignedDate.toDate().toISOString().split("T")[0] : "";
         openCalendarReminder(taskToCalendar.name, taskToCalendar.description, dt);
