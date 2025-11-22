@@ -40,6 +40,9 @@ function applyLanguage(){
     document.getElementById("myDayBtn").insertAdjacentText("beforeend", translations[currentLang].myDay);
     document.getElementById("importantBtn").insertAdjacentText("beforeend", translations[currentLang].important);
     document.getElementById("tasksBtn").insertAdjacentText("beforeend", translations[currentLang].tasks);
+    document.getElementById("myDayBtnSidebar").onclick = ()=>activateTab(document.getElementById("myDayBtn"));
+    document.getElementById("importantBtnSidebar").onclick = ()=>activateTab(document.getElementById("importantBtn"));
+    document.getElementById("tasksBtnSidebar").onclick = ()=>activateTab(document.getElementById("tasksBtn"));
 
     document.getElementById("myDayBtnSidebar").textContent = translations[currentLang].myDay;
     document.getElementById("importantBtnSidebar").textContent = translations[currentLang].important;
